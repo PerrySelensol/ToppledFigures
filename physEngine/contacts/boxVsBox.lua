@@ -102,7 +102,7 @@ local function edge_VS_edge_contact(
 	return
 		A.inverseOriMat*(T_on_A - A.pos),
 		B.inverseOriMat*(T_on_B - B.pos),
-		-vecTbTa:length()*math.sign(vecTbTa..vecBA)
+		vecTbTa:length()*math.sign(vecTbTa..(B.pos-A.pos))
 end
 
 local function vertex_VS_box_contact(A, B, vertA)
@@ -201,7 +201,7 @@ local contactPairCaches = {
 }
 --[[
 	function events.tick()
-		--trint(2, contactPairCaches)
+		trint(2, contactPairCaches["1~2"])
 		for _, cache in next, contactPairCaches do
 			for id, c in next, cache do
 				local pA = c.A.oriMat*c.contactPointA + c.A.pos
@@ -240,7 +240,7 @@ local function getContactInfoFromID(A, B, featureID)
 	end
 end
 
-local COHERENCE_LIMIT = -0.1
+local COHERENCE_LIMIT = -0.002
 local function generatePartialContactManifoldFromCache(A, B, partialContactPairCache)
 	for id, contact in next, partialContactPairCache do
 		local contactPointA, contactPointB, penetration = getContactInfoFromID(A, B, id)
@@ -472,13 +472,5 @@ function ContactGenerators.boxbox(world, A, B)
 	-- Turn the whole thing into full contact manifold data which can be added as constraints
 	for _, contact in next, generateFullContactManifold(partialContactPairCache, A_to_B) do
 		world:addConstraint(contact)
-	end
-end
-
-function events.tick()
-	for _, v in next, contactPairCaches do
-		for _, c in next, v do
-			--point(c.contactPoint)
-		end
 	end
 end

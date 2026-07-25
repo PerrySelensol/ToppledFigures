@@ -10,7 +10,7 @@ function ContactGenerators.boxhalfSpace(world, box, plane)
 		local vertInWorldSpace = box.oriMat*vert + box.pos
 		local vertInPlaneSpace = plane.inverseOriMat*(vertInWorldSpace - plane.pos)
 
-		if vertInPlaneSpace.y < 0.1 then
+		if vertInPlaneSpace.y < 0 then
 			world:addConstraint{
 				type = "contact",
 
