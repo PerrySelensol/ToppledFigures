@@ -240,7 +240,7 @@ local function getContactInfoFromID(A, B, featureID)
 	end
 end
 
-local COHERENCE_LIMIT = -0.2
+local COHERENCE_LIMIT = -0.1
 local function generatePartialContactManifoldFromCache(A, B, partialContactPairCache)
 	for id, contact in next, partialContactPairCache do
 		local contactPointA, contactPointB, penetration = getContactInfoFromID(A, B, id)
@@ -315,8 +315,8 @@ local function newPartialContactCache(
 	minEdgeEdgeDepth, edgeEdgeIndex
 )
 	-- Get the shallower of the two and add the contact point to the solver
-	local friction = A.friction*B.friction
-	local restitution = A.restitution*B.restitution
+	local friction = (A.friction*B.friction)^0.5
+	local restitution = math.max(A.restitution, B.restitution)
 
 	if faceNormalIndex and minPointFaceDepth <= minEdgeEdgeDepth then
 		-- Vertex-Face contact

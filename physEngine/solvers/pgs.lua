@@ -5,7 +5,7 @@ local common = require("./common")
 
 --[=============================================================================]--
 
-local SLOW_CLOSING_VELOCITY_LIMIT = 0.1
+-- //TODO add restitution
 local function solveContact(contact, dt)
 	-- Convert contact point to world orientation, but local position
 	local contactPointA = contact.A.oriMat*contact.contactPointA
@@ -14,63 +14,47 @@ local function solveContact(contact, dt)
 	local penetration = contact.contactNormal ..
 		((contactPointB + (contact.B and contact.B.pos or contact.B_pos)) - (contactPointA + contact.A.pos))
 
-	local separatingVel = common.getSeparatingVel(
+	-- This is our target change in separating velocity after collision
+	-- i.e. we need to fully zero out the separating velocity
+	local targetVelChange = -common.getSeparatingVel(
 		contact.A, contact.B,
 		contactPointA, contactPointB,
 		contact.contactMatrix
-	)
+	); --print(contact.contactPointA, targetVelChange)
+	---@cast targetVelChange Vector3
 
 	-- Skip contact pairs that aren't penetrating (with small tolerance)
-	if penetration < -0.005 then return end
-	point(contact.A.oriMat*contact.contactPointA + contact.A.pos)
+	--if penetration < 0 then return end
+	--point(contact.A.oriMat*contact.contactPointA + contact.A.pos)
 	
-	-- Completely remove bouncing for very slow closing velocity
-	local restitution = 0 --self.restitution
-	if -separatingVel.x < SLOW_CLOSING_VELOCITY_LIMIT then restitution = 0 end
-
 	-- Baumgarte Stabilization
-	-- This bias, proportional to penetration depth, is added to total impulse
+	-- This bias, proportional to penetration depth, is added to total nomral impulse
 	-- Allows penetrating bodies to push themselves apart
-	local bias = math.max(0, (penetration - 0.01) * (0.2/dt))
-	local impulseNormalBias = bias / contact.totalInertia[1][1]
-
-	-- This is our target change in separating velocity after collision
-	-- //TODO readd restitution
-	local targetVelChange = vec(
-		-separatingVel.x*(1 --[[+ restitution]]),
-		-separatingVel.y,
-		-separatingVel.z
-	)
-
-	-- Distribute this targetVelChange to the 2 bodies
-	-- Bouncing with static friction (planar velocity fully removed)
-	--local totalImpulse = contact.totalInertia:inverted() * targetVelChange --print(self.totalInertia)
-	local totalImpulse = targetVelChange.x__ / contact.totalInertia[1][1]
-	totalImpulse.x = totalImpulse.x + impulseNormalBias
-
-	-- Bouncing with dynamic friction (I barely understand friction calculation for this :skull:)
-	-- Temporarily always use friction = 1 until I actually implement friction correctly
-	-- //TODO readd proper friction calculation
-	local planarImpulse = totalImpulse.yz:length()
-	if false and planarImpulse > totalImpulse.x * contact.friction then
-		totalImpulse.y = totalImpulse.y / planarImpulse
-		totalImpulse.z = totalImpulse.z / planarImpulse
-
-		local totalImpulseX =
-			targetVelChange.x / (contact.totalInertia[1][1]
-			+ contact.totalInertia[1][2]*contact.friction*totalImpulse.y
-			+ contact.totalInertia[1][3]*contact.friction*totalImpulse.z)
-		totalImpulse = totalImpulse*totalImpulseX*contact.friction
-		totalImpulse.x = totalImpulseX
+	local bias
+	if penetration > 0 then
+		bias = math.max(0, (penetration - 0.01) * (0.2/dt))
+	else
+		bias = penetration/dt
 	end
 
-	-- Clamp accumulated impulse along normal so it's non-negative at the end
-	local oldAccumImpulse = contact.accumulatedNormalImpulse
-	contact.accumulatedNormalImpulse = math.max(contact.accumulatedNormalImpulse + totalImpulse.x, 0)
-	totalImpulse.x = contact.accumulatedNormalImpulse - oldAccumImpulse
+	-- Impulse needed to kill separating velocity
+	local normalImpulse = (targetVelChange.x + bias) / contact.normalInertia
+	local tangentImpulse = contact.tangentInertia:inverted()*targetVelChange.yz
+
+	-- Clamp accumulated normal impulse so it's non-negative at the end
+	local oldAccumNormalImpulse = contact.accumulatedNormalImpulse
+	contact.accumulatedNormalImpulse = math.max(contact.accumulatedNormalImpulse + normalImpulse, 0)
+	normalImpulse = contact.accumulatedNormalImpulse - oldAccumNormalImpulse
+
+	-- Clamp accumuated tangent impulse so its length is smaller than (friction*normalImpulse)
+	local oldAccumTangentImpulse = contact.accumulatedTangentImpulse
+	contact.accumulatedTangentImpulse =
+		(contact.accumulatedTangentImpulse + tangentImpulse)
+		:clampLength(0, contact.friction*contact.accumulatedNormalImpulse)
+	tangentImpulse = contact.accumulatedTangentImpulse - oldAccumTangentImpulse
 
 	-- Convert impulse to world space then applying it to both bodies
-	local totalImpulseWorld = contact.contactMatrix * totalImpulse
+	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
 	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
 	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
 
@@ -91,6 +75,7 @@ return function(world)
 		end
 	end
 
+	--trint(2, world.constraints)
 	for i = 1, #world.constraints do world.constraints[i] = nil end
 
 	world:integrateBodyPositions(dt)

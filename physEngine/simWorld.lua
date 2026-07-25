@@ -16,7 +16,7 @@ local simWorld = {
 
 	rigidBodies = {},
 	constraints = {},
-	solver = "pgs",
+	solver = "tgs",
 
 	-- In Figura, tick is running at constant speed,
 	-- but we can change the duration to frame time if needed
@@ -70,7 +70,6 @@ end
 function simWorld:step(manualStep)
 	if not (self.isRunning or manualStep) then return end
 
-	local dt = self.stepDuration/self.worldSubsteps
 	local rigidBodies = self.rigidBodies
 
 	for _, body in ipairs(rigidBodies) do

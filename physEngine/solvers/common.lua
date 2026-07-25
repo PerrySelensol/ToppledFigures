@@ -40,49 +40,41 @@ function solverCommons.prepareContact(contact)
 	if contact.type ~= "contact" then return end
 	contact.contactMatrix = generateOrthoBasis(contact.contactNormal)
 	contact.accumulatedNormalImpulse = 0
+	contact.accumulatedTangentImpulse = vec(0,0)
 
-	local totalInertia
-
-	local linearInertiaA = I3 * contact.A.inverseMass
-	local angularInertiaA
-
-	local linearInertiaB
-	local angularInertiaB
+	local normalInertia
+	local tangentInertia
 
 	do
-		local cross_relativeContactPointA = crossMat(contact.A.oriMat * contact.contactPointA)
+		local linearInertiaA = I3 * contact.A.inverseMass
 
+		local cross_relativeContactPointA = crossMat(contact.A.oriMat * contact.contactPointA)
 		local angularImpulsePerLinearImpulse = cross_relativeContactPointA * contact.contactMatrix
 		local rotPerUnit = contact.A.inverseInertiaTensorWorld * angularImpulsePerLinearImpulse
 		local velPerUnit = cross_relativeContactPointA * rotPerUnit * -1
+		local angularInertiaA = contact.contactMatrix:transposed() * velPerUnit
 
-		angularInertiaA = contact.contactMatrix:transposed() * velPerUnit
-
-		totalInertia = angularInertiaA + linearInertiaA
+		local inertiaA = angularInertiaA + linearInertiaA
+		normalInertia = inertiaA[1][1]
+		tangentInertia = matrices.mat2(inertiaA[2].yz, inertiaA[3].yz)
 	end
 
 	if contact.B then
-		linearInertiaB = I3 * contact.B.inverseMass
+		local linearInertiaB = I3 * contact.B.inverseMass
 
 		local cross_relativeContactPointB = crossMat(contact.B.oriMat * contact.contactPointB)
-
 		local angularImpulsePerLinearImpulse = cross_relativeContactPointB * contact.contactMatrix
 		local rotPerUnit = contact.B.inverseInertiaTensorWorld * angularImpulsePerLinearImpulse
 		local velPerUnit = cross_relativeContactPointB * rotPerUnit * -1
+		local angularInertiaB = contact.contactMatrix:transposed() * velPerUnit
 
-		angularInertiaB = contact.contactMatrix:transposed() * velPerUnit
-
-		totalInertia = totalInertia + angularInertiaB + linearInertiaB
+		local inertiaB = angularInertiaB + linearInertiaB
+		normalInertia = normalInertia + inertiaB[1][1]
+		tangentInertia = tangentInertia + matrices.mat2(inertiaB[2].yz, inertiaB[3].yz)
 	end
 
-	contact.totalInertia = totalInertia
-
-	contact.linearInertiaA = linearInertiaA
-	contact.angularInertiaA = angularInertiaA
-
-	contact.linearInertiaB = linearInertiaB
-	contact.angularInertiaB = angularInertiaB
-
+	contact.normalInertia = normalInertia
+	contact.tangentInertia = tangentInertia
 end
 
 return solverCommons

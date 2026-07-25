@@ -33,14 +33,18 @@ local ROTS = {}; do
 end
 
 --[[
-	local box1 = Box:new("carved_pumpkin", 1, 1, 1, 10000):setRestitution(1):setFriction(0)
-	:setPos(vec(0,1,0)):setOrientation(ROTS["+00"] + quat(0,0,0.1,-0.1))
-	:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	local box1 = simWorld:addRigidBody(
+		Box:new("carved_pumpkin", 1, 1, 1, 10000):setRestitution(1):setFriction(0)
+		:setPos(vec(0,1,0)):setOrientation(ROTS["+00"] + quat(0,0,0.1,-0.1))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
 	--ForceGenerators.register(box2, ForceGenerators.gravityForceGen(vec(0,-2,0)))
 
-	local box2 = Box:new("dropper", 1, 1, 1, 1):setRestitution(1):setFriction(0)
-	:setPos(vec(0.2,3.4,0)):setOrientation(ROTS["---"])
-	:setVel(vec(-0,-1,0)):setAngularVelocity(0,0,0)
+	local box2 = simWorld:addRigidBody(
+		Box:new("dropper", 1, 1, 1, 1):setRestitution(1):setFriction(0)
+		:setPos(vec(0.2,3.4,0)):setOrientation(ROTS["---"])
+		:setVel(vec(-0,-1,0)):setAngularVelocity(0,0,0)
+	)
 	--ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-2,0))); --print(box1)
 --]]
 
@@ -57,33 +61,43 @@ end
 --]]
 
 ---[[
+	local width = 1
+	local friction = 0
+
 	local box1 = simWorld:addRigidBody(
-		Box:new("carved_pumpkin", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-		:setPos(vec(0,0.6,0)):setOrientation(quat(1,0,0.2,0))
+		Box:new("carved_pumpkin", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,0.5,0)):setOrientation(quat(1,0,0.2,0))
 		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 	)
 	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 
 	local box2 = simWorld:addRigidBody(
-		Box:new("dropper", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-		:setPos(vec(0,1.7,0)):setOrientation(quat(1,0,0.4,0))
+		Box:new("dropper", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,1.5,0)):setOrientation(quat(1,0,0.4,0))
 		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 	)
 	ForceGenerators.register(box2, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 
 	local box3 = simWorld:addRigidBody(
-		Box:new("crafter", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-		:setPos(vec(0,2.8,0)):setOrientation(quat(1,0,0,0))
+		Box:new("crafter", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,2.5,0)):setOrientation(quat(1,0,0,0))
 		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 	)
 	ForceGenerators.register(box3, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 
 	local box4 = simWorld:addRigidBody(
-		Box:new("observer", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-		:setPos(vec(0,3.9,0)):setOrientation(quat(1,0,-0.3,0))
+		Box:new("observer", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,3.5,0)):setOrientation(quat(1,0,-0.3,0))
 		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 	)
 	ForceGenerators.register(box4, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+
+	local box5 = simWorld:addRigidBody(
+		Box:new("furnace", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,4.5,0)):setOrientation(quat(1,0,0.7,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
+	ForceGenerators.register(box5, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 	
 	--local shoot = simWorld:addRigidBody(
 	--	Box:new("slime_block", 0.5, 0.5, 0.5, 1):setRestitution(0.4):setFriction(0.5)
@@ -93,9 +107,20 @@ end
 --]]
 
 --[[
-	local box1 = Box:new("slime_block", 1, 1, 1, 1):setRestitution(0.9):setFriction(0)
-	:setPos(vec(0,5,0)):setOrientation(ROTS["0-0"])
-	:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	local box1 = simWorld:addRigidBody(
+		Box:new("dropper", 1, 1, 1, 1):setRestitution(0):setFriction(0.3)
+		:setPos(vec(0,5,0)):setOrientation(ROTS["0-0"])
+		:setVel(vec(3,0,0)):setAngularVelocity(6,0,0)
+	)
+	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+--]]
+
+--[[
+	local box1 = simWorld:addRigidBody(
+		Box:new("dropper", 1, 1, 1, 1):setRestitution(0):setFriction(1)
+		:setPos(vec(0,0.5,0)):setOrientation(ROTS["---"])
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
 	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 --]]
 

@@ -10,7 +10,7 @@ function ContactGenerators.boxhalfSpace(world, box, plane)
 		local vertInWorldSpace = box.oriMat*vert + box.pos
 		local vertInPlaneSpace = plane.inverseOriMat*(vertInWorldSpace - plane.pos)
 
-		if vertInPlaneSpace.y < 0 then
+		if vertInPlaneSpace.y < 0.1 then
 			world:addConstraint{
 				type = "contact",
 
@@ -25,8 +25,8 @@ function ContactGenerators.boxhalfSpace(world, box, plane)
 
 				penetration = -vertInPlaneSpace.y,
 
-				restitution = box.restitution*plane.restitution,
-				friction = box.friction*plane.friction
+				restitution = math.max(box.restitution, plane.restitution),
+				friction = (box.friction*plane.friction)^0.5
 			}
 		end
 		
