@@ -29,7 +29,7 @@ local function solveContact(contact, dt, useBias)
 	---@cast targetVelChange Vector3
 
 	-- Skip contact pairs that aren't penetrating (with small tolerance)
-	if penetration < 0 then return end
+	--if penetration < 0 then return end
 	--point(contactPointA + contact.A.pos)
 	--point(contactPointA + contact.A.pos + contactShift, vec(0,0,0))
 
@@ -38,7 +38,7 @@ local function solveContact(contact, dt, useBias)
 	-- Allows penetrating bodies to push themselves apart
 	local normalBias = 0
 	if penetration < 0 then
-		normalBias = 0--penetration/dt
+		normalBias = penetration/dt
 	elseif useBias then
 		normalBias = math.min(2, (penetration) * (0.8/dt))
 	end
@@ -88,7 +88,7 @@ return function(world)
 
 	end
 
-	--[[
+	---[[
 		for _ = 1, world.positionIterations do
 
 			local h = dt/world.positionIterations

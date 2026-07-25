@@ -25,7 +25,8 @@ local function solveContact(contact, dt)
 
 	-- Skip contact pairs that aren't penetrating (with small tolerance)
 	--if penetration < 0 then return end
-	--point(contact.A.oriMat*contact.contactPointA + contact.A.pos)
+	--point(contactPointA + contact.A.pos)
+	--point(contactPointB + (contact.B and contact.B.pos or contact.B_pos), vec(0,0,0))
 	
 	-- Baumgarte Stabilization
 	-- This bias, proportional to penetration depth, is added to total nomral impulse

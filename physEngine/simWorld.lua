@@ -16,7 +16,7 @@ local simWorld = {
 
 	rigidBodies = {},
 	constraints = {},
-	solver = "tgs",
+	solver = "pgs",
 
 	-- In Figura, tick is running at constant speed,
 	-- but we can change the duration to frame time if needed
@@ -82,6 +82,7 @@ function simWorld:step(manualStep)
 	for _ = 1, self.worldSubsteps do
 
 		-- Currently uses narrow phase only
+		--markBench"collsion"
 		for i = 1, #rigidBodies do for j = i+1, #rigidBodies do
 			local typeA, typeB = rigidBodies[i].type, rigidBodies[j].type
 			if typeA == "halfSpace" and typeB == "halfSpace" then goto endOfLoop end
@@ -93,8 +94,9 @@ function simWorld:step(manualStep)
 			::endOfLoop::
 		end end
 
+		--markBench"solve"
 		Solvers[self.solver](self)
-
+		--brint()
 	end
 end
 
@@ -110,5 +112,15 @@ end)
 keybinds:newKeybind("step", "key.keyboard.end"):onPress(function()
 	simWorld:step(true)
 end)
+
+function freezeVel()
+	for _, body in next, simWorld.rigidBodies do
+		if not body.colliderOnly then
+			body.vel = vec(0,0,0)
+			body.rot = vec(0,0,0)
+		end
+
+	end
+end
 
 return simWorld
