@@ -110,7 +110,7 @@ end
 	--)
 --]]
 
----[[
+--[[
 	local width = 1
 	local friction = 1
 
@@ -135,25 +135,69 @@ end
 	)
 	ForceGenerators.register(box3, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 
-	--local box4 = simWorld:addRigidBody(
-	--	Box:new("observer", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
-	--	:setPos(vec(-0.1,3.5,-0.1)):setOrientation(quat(1,0,0,0))
-	--	:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
-	--)
-	--ForceGenerators.register(box4, ForceGenerators.gravityForceGen(vec(0,-10,0)))
---
-	--local box5 = simWorld:addRigidBody(
-	--	Box:new("furnace", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
-	--	:setPos(vec(0,4.5,0)):setOrientation(quat(1,0,0,0))
-	--	:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
-	--)
-	--ForceGenerators.register(box5, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+	local box4 = simWorld:addRigidBody(
+		Box:new("observer", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(-0.1,3.5,-0.1)):setOrientation(quat(1,0,0,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
+	ForceGenerators.register(box4, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+
+	local box5 = simWorld:addRigidBody(
+		Box:new("furnace", width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+		:setPos(vec(0,4.5,0)):setOrientation(quat(1,0,0,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
+	ForceGenerators.register(box5, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 	
 	--local shoot = simWorld:addRigidBody(
 	--	Box:new("slime_block", 0.5, 0.5, 0.5, 1):setRestitution(0.4):setFriction(0.5)
 	--	:setPos(vec(30,3,0)):setOrientation(quat(1,0,0,0))
 	--	:setVel(vec(-3,0,0)):setAngularVelocity(0,0,0)
 	--)
+--]]
+
+--[[
+	local pallete = {
+		"magenta_concrete",
+		"pink_concrete",
+		"white_concrete",
+		"light_blue_concrete",
+		"blue_concrete",
+	}
+	local width = 1
+	local friction = 1
+	for k = 1, 7 do
+		for i = 1, k do
+			local j = (i % 2 == 0) and -0.05 or 0.05
+			local box = simWorld:addRigidBody(
+				Box:new(pallete[((i-1)%5) + 1], width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+				:setPos(vec(j+3*k-11,i-0.5,j)):setOrientation(quat(1,0,0,0))
+				:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+			)
+			ForceGenerators.register(box, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+		end
+	end
+--]]
+
+---[[
+	local pallete = {
+		"magenta_concrete",
+		"pink_concrete",
+		"white_concrete",
+		"light_blue_concrete",
+		"blue_concrete",
+	}
+	local width = 1
+	local friction = 0.3
+	for i = 1, 5 do
+		local j = (i % 2 == 0) and -0.05 or 0.05
+		local box = simWorld:addRigidBody(
+			Box:new(pallete[((i-1)%5) + 1], width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+			:setPos(vec(j,i-0.5,j)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		ForceGenerators.register(box, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+	end
 --]]
 
 --[[
@@ -166,10 +210,21 @@ end
 --]]
 
 --[[
+	local v = 2
 	local box1 = simWorld:addRigidBody(
 		Box:new("gray_concrete", 2, 0.5, 4, 1):setRestitution(1):setFriction(0)
+		:setPos(vec(-6,4,0)):setOrientation(quat(1,0,0,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(v,0.00001,0)
+	)
+	local box2 = simWorld:addRigidBody(
+		Box:new("gray_concrete", 2, 0.5, 4, 1):setRestitution(1):setFriction(0)
 		:setPos(vec(0,4,0)):setOrientation(quat(1,0,0,0))
-		:setVel(vec(0,0,0)):setAngularVelocity(5,0.001,0)
+		:setVel(vec(0,0,0)):setAngularVelocity(0,v,0.00001)
+	)
+	local box3 = simWorld:addRigidBody(
+		Box:new("gray_concrete", 2, 0.5, 4, 1):setRestitution(1):setFriction(0)
+		:setPos(vec(6,4,0)):setOrientation(quat(1,0,0,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0.00001,v)
 	)
 --]]
 

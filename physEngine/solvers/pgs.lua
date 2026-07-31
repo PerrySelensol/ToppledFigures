@@ -32,8 +32,8 @@ local function solveContact(contact, dt)
 	-- This bias, proportional to penetration depth, is added to total nomral impulse
 	-- Allows penetrating bodies to push themselves apart
 	local bias
-	if penetration > 0 then
-		bias = math.max(0, (penetration - 0.01) * (0.2/dt))
+	if penetration >= 0 then
+		bias = math.max(0, (penetration - 0.005)) * (0.2/dt)
 	else
 		bias = penetration/dt
 	end
@@ -61,6 +61,23 @@ local function solveContact(contact, dt)
 
 end
 
+local contactImpulses = {}
+
+local function warmStartContact(contact)
+	local cachedImpulses = contactImpulses[contact.contactID]
+	if not cachedImpulses then return end
+	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.9, cachedImpulses[2]*0.2
+	contact.accumulatedNormalImpulse = normalImpulse
+	contact.accumulatedTangentImpulse = tangentImpulse
+
+	local contactPointA = contact.A.oriMat*contact.contactPointA
+	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+
+	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
+	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
+	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
+end
+
 return function(world)
 	local dt = world.stepDuration/world.worldSubsteps
 
@@ -68,7 +85,10 @@ return function(world)
 	
 	for _, contact in ipairs(world.constraints) do
 		common.prepareContact(contact)
+		warmStartContact(contact)
 	end
+	--trint(2, contactImpulses)
+	contactImpulses = {}
 
 	for _ = 1, world.velocityIterations do
 		for i, contact in ipairs(world.constraints) do
@@ -76,8 +96,10 @@ return function(world)
 		end
 	end
 
-	--trint(2, world.constraints)
-	for i = 1, #world.constraints do world.constraints[i] = nil end
+	for i, contact in ipairs(world.constraints) do
+		contactImpulses[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
+		world.constraints[i] = nil
+	end
 
 	world:integrateBodyPositions(dt)
 end

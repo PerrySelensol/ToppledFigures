@@ -13,6 +13,7 @@ function ContactGenerators.boxhalfSpace(world, box, plane)
 		if vertInPlaneSpace.y < 0 then
 			world:addConstraint{
 				type = "contact",
+				contactID = box.id.."~"..plane.id..";",
 
 				A = box,
 				B_oriMat = plane.oriMat,

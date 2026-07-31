@@ -332,6 +332,7 @@ local function newPartialContactCache(
 
 			return cornerID, {
 				type = "contact",
+				contactID = A.id.."~"..B.id..";"..cornerID,
 
 				axisIndexA = faceNormalIndex,
 
@@ -351,6 +352,7 @@ local function newPartialContactCache(
 
 			return cornerID, {
 				type = "contact",
+				contactID = A.id.."~"..B.id..";"..cornerID,
 
 				axisIndexB = faceNormalIndex-3,
 
@@ -403,8 +405,10 @@ local function newPartialContactCache(
 		)
 
 		if contactPointA then
-			return "edges"..table.concat(edgePairID), {
+			local edgeID = "edges"..table.concat(edgePairID)
+			return edgeID, {
 				type = "contact",
+				contactID = A.id.."~"..B.id..";"..edgeID,
 
 				axisIndexA = axisIndexA,
 				axisIndexB = axisIndexB,
@@ -424,8 +428,8 @@ local function newPartialContactCache(
 end
 
 function ContactGenerators.boxbox(world, A, B)
-	if A.id > B.id then A, B = B, A end
-	local contactPairID = A.id.."~"..B.id
+	if A.boxID > B.boxID then A, B = B, A end
+	local contactPairID = A.boxID.."~"..B.boxID
 	local contactPairCache = contactPairCaches[contactPairID]
 	if not contactPairCache then
 		contactPairCache = {}

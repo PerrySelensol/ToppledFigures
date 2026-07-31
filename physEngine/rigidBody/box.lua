@@ -17,7 +17,7 @@ do
 		
 		local o = super_new(self,
 			{
-				id = boxID,
+				boxID = boxID,
 				halfSizes = vec(sizeX/2, sizeY/2, sizeZ/2),
 			
 				inverseMass = 1/mass,

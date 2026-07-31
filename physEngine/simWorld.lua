@@ -11,7 +11,9 @@ local BODY_ORDER = {
 }
 
 local simWorld = {
-	isRunning = true,
+	internalIDCount = 1,
+
+	isRunning = false,
 	worldPart = models:newPart("simWorldPart", "World"),
 
 	rigidBodies = {},
@@ -34,7 +36,12 @@ function simWorld:render(delta)
 	end
 end
 
-function simWorld:addRigidBody(body) table.insert(self.rigidBodies, body) return body end
+function simWorld:addRigidBody(body)
+	table.insert(self.rigidBodies, body)
+	body.id = self.internalIDCount
+	self.internalIDCount = self.internalIDCount + 1
+	return body
+end
 
 function simWorld:integrateBodyPositions(dt)
 	for _, body in ipairs(self.rigidBodies) do
