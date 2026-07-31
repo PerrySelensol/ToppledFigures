@@ -20,13 +20,11 @@ local function solveContact(contact, dt)
 		contact.A, contact.B,
 		contactPointA, contactPointB,
 		contact.contactMatrix
-	); --print(contact.contactPointA, targetVelChange)
+	)
 	---@cast targetVelChange Vector3
 
-	-- Skip contact pairs that aren't penetrating (with small tolerance)
-	--if penetration < 0 then return end
-	--point(contactPointA + contact.A.pos)
-	--point(contactPointB + (contact.B and contact.B.pos or contact.B_pos), vec(0,0,0))
+	--point(contactPointA + contact.A.pos, vec(1,0,0))
+	--point(contactPointB + (contact.B and contact.B.pos or contact.B_pos), vec(0,1,0))
 	
 	-- Baumgarte Stabilization
 	-- This bias, proportional to penetration depth, is added to total nomral impulse
@@ -58,7 +56,6 @@ local function solveContact(contact, dt)
 	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
 	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
 	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
-
 end
 
 local contactImpulses = {}
@@ -87,11 +84,10 @@ return function(world)
 		common.prepareContact(contact)
 		warmStartContact(contact)
 	end
-	--trint(2, contactImpulses)
 	contactImpulses = {}
 
 	for _ = 1, world.velocityIterations do
-		for i, contact in ipairs(world.constraints) do
+		for _, contact in ipairs(world.constraints) do
 			solveContact(contact, dt)
 		end
 	end

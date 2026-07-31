@@ -32,7 +32,7 @@ local ROTS = {}; do
 	end end end
 end
 
---[[
+--[[ Box-Box contact test
 	local box2 = simWorld:addRigidBody(
 		Box:new("dropper", 1, 1, 1, 1):setRestitution(1):setFriction(0)
 		:setPos(vec(0.2,2.2,0)):setOrientation(ROTS["++0"])
@@ -64,7 +64,7 @@ end
 	ForceGenerators.register(box3, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 --]]
 
---[[
+--[[ Textured cube stack 1
 	local width = 1
 	local friction = 1
 
@@ -110,7 +110,7 @@ end
 	--)
 --]]
 
---[[
+--[[ Textured cube stack 2
 	local width = 1
 	local friction = 1
 
@@ -156,7 +156,7 @@ end
 	--)
 --]]
 
---[[
+--[[ Super stacks
 	local pallete = {
 		"magenta_concrete",
 		"pink_concrete",
@@ -179,7 +179,7 @@ end
 	end
 --]]
 
----[[
+---[[ Stack of cubes 1
 	local pallete = {
 		"magenta_concrete",
 		"pink_concrete",
@@ -200,7 +200,28 @@ end
 	end
 --]]
 
---[[
+--[[ Stack of cubes 2
+	local pallete = {
+		"magenta_concrete",
+		"pink_concrete",
+		"white_concrete",
+		"light_blue_concrete",
+		"blue_concrete",
+	}
+	local width = 1
+	local friction = 0.3
+	for i = 1, 5 do
+		local j = (i % 2 == 0) and 0 or 0.4
+		local box = simWorld:addRigidBody(
+			Box:new(pallete[((i-1)%5) + 1], width, 1, width, 1):setRestitution(0.4):setFriction(friction)
+			:setPos(vec(0,i-0.5,0)):setOrientation(quat(1,0,j,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		ForceGenerators.register(box, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+	end
+--]]
+
+--[[ Single contact test
 	local box1 = simWorld:addRigidBody(
 		Box:new("dropper", 1, 1, 1, 1):setRestitution(0):setFriction(0.3)
 		:setPos(vec(0,2,0)):setOrientation(ROTS["+++"])
@@ -209,7 +230,7 @@ end
 	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 --]]
 
---[[
+--[[ Intermediate axis theorem
 	local v = 2
 	local box1 = simWorld:addRigidBody(
 		Box:new("gray_concrete", 2, 0.5, 4, 1):setRestitution(1):setFriction(0)
@@ -228,36 +249,41 @@ end
 	)
 --]]
 
---[[
+--[[ Spinning top
 	local box1 = simWorld:addRigidBody(
-		Box:new("gray_concrete", 1, 1, 1, 1):setRestitution(0):setFriction(1)
+		Box:new("gray_concrete", 1, 1, 1, 1):setRestitution(0):setFriction(0.4)
 		:setPos(vec(0,2,0)):setOrientation(ROTS["+++"] + quat(0,0,0,0))
 		:setVel(vec(0,0,0)):setAngularVelocity(2,40,0)
 	)
 	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 --]]
 
---[[
-	local box1 = simWorld:addRigidBody(
-		Box:new("dropper", 1, 1, 1, 1):setRestitution(0):setFriction(1)
-		:setPos(vec(0,0.5,0)):setOrientation(ROTS["---"])
-		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
-	)
-	ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
---]]
-
---[[
+--[[ Double domino
 	local B = {}
 	for i = 1, 15 do
 		B[i] = simWorld:addRigidBody(
-			Box:new("white_concrete", 0.2, 1, 0.5, 1):setRestitution(0):setFriction(1)
+			Box:new("white_concrete", 0.3, 1, 0.7, 1):setRestitution(0):setFriction(0.5)
 			:setPos(vec((i*1.01)-8,0.5,0)):setOrientation(quat(1,0,0,0))
 			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 		)
-		ForceGenerators.register(B[i], ForceGenerators.gravityForceGen(vec(0,-3,0)))
+		ForceGenerators.register(B[i], ForceGenerators.gravityForceGen(vec(0,-5,0)))
 	end
 
-	B[1]:setPos(vec(-6.78,0.55,0)):setOrientation(quat(1,0,0,-0.2))
+	B[1]:setPos(vec(-6.7,0.6,0)):setOrientation(quat(1,0,0,-0.3))
+--]]
+
+--[[ Pyramid
+	local h = 3
+	for k = 1, h do
+		for i = 1, k do for j = 1, k do
+			local box = simWorld:addRigidBody(
+				Box:new("light_blue_concrete", 1, 1, 1, 1):setRestitution(0):setFriction(0.3)
+				:setPos(vec(i-k/2,h+0.5-k,j-k/2)):setOrientation(quat(1,0,0,0))
+				:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+			)
+			ForceGenerators.register(box, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+		end end
+	end
 --]]
 
 --printTable(simWorld.rigidBodies)

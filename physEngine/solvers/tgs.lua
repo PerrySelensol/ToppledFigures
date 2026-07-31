@@ -5,7 +5,7 @@ local common = require("./common")
 
 --[=============================================================================]--
 
---//TODO fix friction impulse ruining box stacks
+--//TODO TGS is still very unstable compared to PGS+warmstarting
 local function solveContact(contact, dt, useBias)
 	-- Convert contact point to world orientation, but local position
 	local contactPointA = contact.A.oriMat*contact.contactPointA
@@ -28,8 +28,6 @@ local function solveContact(contact, dt, useBias)
 	)
 	---@cast targetVelChange Vector3
 
-	-- Skip contact pairs that aren't penetrating (with small tolerance)
-	--if penetration < 0 then return end
 	--point(contactPointA + contact.A.pos)
 	--point(contactPointA + contact.A.pos + contactShift, vec(0,0,0))
 
@@ -40,9 +38,9 @@ local function solveContact(contact, dt, useBias)
 	if penetration < 0 then
 		normalBias = penetration/dt
 	elseif useBias then
-		normalBias = math.min(2, (penetration) * (0.8/dt))
+		normalBias = math.min(2, math.max(0, (penetration - 0.005)) * (0.2/dt))
 	end
-	local tangentBias = useBias and (0.5/dt)*slid or vec(0,0)
+	local tangentBias = useBias and (0.2/dt)*slid or vec(0,0)
 
 	-- Impulse needed to kill separating velocity
 	local normalImpulse = (targetVelChange.x + normalBias) / contact.normalInertia
@@ -67,12 +65,31 @@ local function solveContact(contact, dt, useBias)
 
 end
 
+local contactImpulses = {}
+
+local function warmStartContact(contact)
+	local cachedImpulses = contactImpulses[contact.contactID]
+	if not cachedImpulses then return end
+	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.5, cachedImpulses[2]*0.5
+	contact.accumulatedNormalImpulse = normalImpulse
+	contact.accumulatedTangentImpulse = tangentImpulse
+
+	local contactPointA = contact.A.oriMat*contact.contactPointA
+	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+
+	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
+	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
+	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
+end
+
 return function(world)
 	local dt = world.stepDuration/world.worldSubsteps
 
 	for _, contact in ipairs(world.constraints) do
 		common.prepareContact(contact)
+		warmStartContact(contact)
 	end
+	contactImpulses = {}
 
 	for _ = 1, world.velocityIterations do
 
@@ -88,7 +105,7 @@ return function(world)
 
 	end
 
-	---[[
+	--[[
 		for _ = 1, world.positionIterations do
 
 			local h = dt/world.positionIterations
@@ -102,6 +119,9 @@ return function(world)
 		end
 	--]]
 
-	for i = 1, #world.constraints do world.constraints[i] = nil end
+	for i, contact in ipairs(world.constraints) do
+		contactImpulses[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
+		world.constraints[i] = nil
+	end
 
 end
