@@ -7,8 +7,11 @@ local ForceGenerators = require("physEngine/forceGenerators/forceGens")
 
 --[=============================================================================]--
 
-local ground = simWorld:addRigidBody(HalfSpace:new(vec(0,0,0), vec(0,1,0)))
+-- Offset the display, so the world can be somewhere else other than the origin
+local WORLD_OFFSET = vec(0,0,0)
+simWorld.worldPart:pos(16*WORLD_OFFSET)
 
+-- Some predefined orientations, for pointing a certain cube feature downwards
 local ROTS = {}; do
 	local generateOrthoBasis; do
 		local Z1, Z2 = vec(0,0,1), vec(0,1,0)
@@ -31,6 +34,9 @@ local ROTS = {}; do
 		ROTS[sign(i,j,k)] = quatMath.rotMatToQuat(generateOrthoBasis(axis):transposed())
 	end end end
 end
+
+-- Demos; uncomment to use it
+local ground = simWorld:addRigidBody(HalfSpace:new(vec(0,0,0), vec(0,1,0)))
 
 --[[ Box-Box contact test
 	local box2 = simWorld:addRigidBody(
@@ -179,7 +185,7 @@ end
 	end
 --]]
 
----[[ Stack of cubes 1
+--[[ Stack of cubes 1
 	local pallete = {
 		"magenta_concrete",
 		"pink_concrete",
@@ -284,6 +290,57 @@ end
 			ForceGenerators.register(box, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 		end end
 	end
+--]]
+
+---[[ Brick wall
+	local width, height = 1.5, 0.75
+	local arrayWidth, arrayHeight = 4, 5
+	for i = 1, arrayHeight do
+		local s = (i%2 == 0)
+		for j = 1, arrayWidth do
+			local brick = simWorld:addRigidBody(
+				Box:new("red_terracotta", width, height, 1, 1):setRestitution(0):setFriction(0.4)
+				:setPos(vec(
+					-5+(s and 0 or width*0.5)+j*width,
+					(i-0.5)*height,
+					(s and 0 or 0.1)
+				))
+				:setOrientation(quat(1,0,0,0))
+				:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+			)
+			ForceGenerators.register(brick, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+		end
+		local fill = simWorld:addRigidBody(
+			Box:new("orange_terracotta", width/2, height, 1, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(
+				-5+(s and 0 or width*0.5)+(s and (arrayWidth+0.75) or (0.25))*width,
+				(i-0.5)*height,
+				((i%2 == 0) and 0 or 0.1)
+			))
+			:setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		ForceGenerators.register(fill, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+	end
+--]]
+
+---[[ Throw cubes
+	local thrownCube
+	local size, mass = 0.25, 5
+	keybinds:newKeybind("throw cube", "key.mouse.right"):onPress(function()
+		if not thrownCube then
+			thrownCube = simWorld:addRigidBody(
+				Box:new("cyan_terracotta", size, size, size, mass):setRestitution(0):setFriction(0.3)
+			)
+			ForceGenerators.register(thrownCube, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+		end
+		local eyePos = player:getPos():add(0,player:getEyeHeight(),0)
+		thrownCube
+			:setOrientation(quat(1,0,0,0))
+			:setPos(eyePos-WORLD_OFFSET)
+			:setVel(player:getLookDir()*10)
+			:setAngularVelocity(0,0,0)
+	end)
 --]]
 
 --printTable(simWorld.rigidBodies)

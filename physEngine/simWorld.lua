@@ -28,7 +28,6 @@ local simWorld = {
 	velocityIterations = 4,
 	positionIterations = 2
 }
---simWorld.worldPart:pos(16*vec(50, 259, 21))
 
 function simWorld:render(delta)
 	for _, body in next, self.rigidBodies do
