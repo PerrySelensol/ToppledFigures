@@ -66,10 +66,8 @@ local function solveContact(contact, dt, useBias)
 	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
 end
 
-local contactImpulses = {}
-
-local function warmStartContact(contact)
-	local cachedImpulses = contactImpulses[contact.contactID]
+local function warmStartContact(world, contact)
+	local cachedImpulses = world.cache[contact.contactID]
 	if not cachedImpulses then return end
 	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.9, cachedImpulses[2]*0.2
 	contact.accumulatedNormalImpulse = normalImpulse
@@ -88,9 +86,9 @@ return function(world)
 
 	for _, contact in ipairs(world.constraints) do
 		common.prepareContact(contact)
-		warmStartContact(contact)
+		warmStartContact(world, contact)
 	end
-	contactImpulses = {}
+	world.cache = {}
 
 	-- Approximate sub-stepping rather than iterating (contact points are not updated)
 	for _ = 1, world.velocityIterations do
@@ -111,7 +109,7 @@ return function(world)
 	end
 
 	for i, contact in ipairs(world.constraints) do
-		contactImpulses[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
+		world.cache[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
 		world.constraints[i] = nil
 	end
 

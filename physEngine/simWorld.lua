@@ -10,39 +10,62 @@ local BODY_ORDER = {
 	halfSpace = 2,
 }
 
-local simWorld = {
-	internalIDCount = 1,
+local worldID = 1
+local World = {
+	worlds = {},
 
-	isRunning = false,
-	worldPart = models:newPart("simWorldPart", "World"),
+	-- Default world parameters
+		solver = "pgs",
 
-	rigidBodies = {},
-	constraints = {},
-	solver = "pgs",
+		-- In Figura, tick is running at constant speed,
+		-- but we can change the duration to frame time if needed
+		stepDuration = 1/20,
+		worldSubsteps = 2,
 
-	-- In Figura, tick is running at constant speed,
-	-- but we can change the duration to frame time if needed
-	stepDuration = 1/20,
-	worldSubsteps = 2,
-
-	velocityIterations = 4,
-	positionIterations = 2
+		velocityIterations = 4,
+		positionIterations = 2
 }
 
-function simWorld:render(delta)
+function World:new(o)
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+
+	-- Internal world data
+	do
+		o.isRunning = false
+		o.worldPart = models:newPart("physicsDisplay"..worldID, "World")
+		worldID = worldID+1
+
+		o.internalIDCount = 1
+		o.rigidBodies = {}
+		o.constraints = {}
+		o.forces = {}
+		o.cache = {}
+	end
+
+
+	table.insert(self.worlds, o)
+	return o
+end
+
+function World:render(delta)
 	for _, body in next, self.rigidBodies do
 		if not body.noRender then body:render(self.isRunning and delta or 1) end
 	end
 end
 
-function simWorld:addRigidBody(body)
+function World:addRigidBody(body)
 	table.insert(self.rigidBodies, body)
 	body.id = self.internalIDCount
 	self.internalIDCount = self.internalIDCount + 1
+	if body.renderTask then
+		body.renderTask = self.worldPart:newBlock("physDisplay_"..body.id):block(body.renderTask --[[@as string]])
+	end
 	return body
 end
 
-function simWorld:integrateBodyPositions(dt)
+function World:integrateBodyPositions(dt)
 	for _, body in ipairs(self.rigidBodies) do
 		if not body.colliderOnly then
 			body:integratePosition(dt)
@@ -50,8 +73,8 @@ function simWorld:integrateBodyPositions(dt)
 		end
 	end
 end
-function simWorld:integrateBodyVelocities(dt)
-	ForceGenerators.updateAllForces(dt)
+function World:integrateBodyVelocities(dt)
+	ForceGenerators.updateAllForces(self, dt)
 	for _, body in ipairs(self.rigidBodies) do
 		if not body.colliderOnly then
 			body:integrateVelocity(dt)
@@ -59,7 +82,7 @@ function simWorld:integrateBodyVelocities(dt)
 	end
 end
 
-function simWorld:addConstraint(data)
+function World:addConstraint(data)
 	assert(data.type, "no type")
 	assert(data.A, "no A")
 	if data.type == "contact" then
@@ -73,7 +96,7 @@ function simWorld:addConstraint(data)
 	table.insert(self.constraints, data)
 end
 
-function simWorld:step(manualStep)
+function World:step(manualStep)
 	if not (self.isRunning or manualStep) then return end
 
 	local rigidBodies = self.rigidBodies
@@ -86,7 +109,6 @@ function simWorld:step(manualStep)
 	end
 
 	for _ = 1, self.worldSubsteps do
-
 		-- Currently uses narrow phase only
 		--markBench"collsion"
 		for i = 1, #rigidBodies do for j = i+1, #rigidBodies do
@@ -108,25 +130,39 @@ end
 
 --[=============================================================================]--
 
-function events.tick() simWorld:step() end
-local renderName = host:isHost() and "world_render" or "render"
-events[renderName] = function(delta) simWorld:render(delta) end
-
-keybinds:newKeybind("pause/play", "key.keyboard.page.up"):onPress(function()
-	simWorld.isRunning = not simWorld.isRunning
-end)
-keybinds:newKeybind("step", "key.keyboard.end"):onPress(function()
-	simWorld:step(true)
-end)
-
-function freezeVel()
-	for _, body in next, simWorld.rigidBodies do
-		if not body.colliderOnly then
-			body.vel = vec(0,0,0)
-			body.rot = vec(0,0,0)
-		end
-
+function events.tick()
+	for _, w in next, World.worlds do
+		w:step()
 	end
 end
 
-return simWorld
+local renderName = host:isHost() and "world_render" or "render"
+events[renderName] = function(delta)
+	for _, w in next, World.worlds do
+		w:render(delta)
+	end
+end
+
+keybinds:newKeybind("pause/play", "key.keyboard.page.up"):onPress(function()
+	for _, w in next, World.worlds do
+		w.isRunning = not w.isRunning
+	end
+end)
+
+keybinds:newKeybind("step", "key.keyboard.end"):onPress(function()
+	for _, w in next, World.worlds do
+		w:step(true)
+	end
+end)
+
+--function freezeVel(world)
+--	for _, body in next, world.rigidBodies do
+--		if not body.colliderOnly then
+--			body.vel = vec(0,0,0)
+--			body.rot = vec(0,0,0)
+--		end
+--
+--	end
+--end
+
+return World

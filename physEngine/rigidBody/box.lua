@@ -1,4 +1,3 @@
-local simWorld = require("physEngine/simWorld")
 local RigidBody = require("physEngine/rigidBody/rigidBody")
 local quatMath = require("physEngine/libs/quaternions")
 
@@ -30,14 +29,13 @@ do
 				restitution = 1,
 				friction = 0,
 				
-				renderTask = simWorld.worldPart:newBlock("physBox_"..boxID):block(blockState)
+				renderTask = blockState
 			}
 		)
 		setmetatable(o, self)
 		self.__index = self
 
 		boxID = boxID+1
-		table.insert(simWorld, o)
 		o:calculateDerivedData()
 
 		return o
