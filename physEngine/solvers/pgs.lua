@@ -9,7 +9,9 @@ local common = require("./common")
 local function solveContact(contact, dt)
 	-- Convert contact point to world orientation, but local position
 	local contactPointA = contact.A.oriMat*contact.contactPointA
-	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+	local contactPointB = contact.B
+		and contact.B.oriMat*contact.contactPointB
+		or contact.B_oriMat*contact.contactPointB
 
 	local penetration = contact.contactNormal ..
 		((contactPointB + (contact.B and contact.B.pos or contact.B_pos)) - (contactPointA + contact.A.pos))

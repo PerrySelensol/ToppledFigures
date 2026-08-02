@@ -5,11 +5,13 @@ local common = require("./common")
 
 --[=============================================================================]--
 
---//TODO TGS is still very unstable compared to PGS+warmstarting
+-- //TODO add restitution
 local function solveContact(contact, dt, useBias)
 	-- Convert contact point to world orientation, but local position
 	local contactPointA = contact.A.oriMat*contact.contactPointA
-	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+	local contactPointB = contact.B
+		and contact.B.oriMat*contact.contactPointB
+		or contact.B_oriMat*contact.contactPointB
 
 	local contactShift =
 		(contactPointB + (contact.B and contact.B.pos or contact.B_pos))
@@ -38,7 +40,7 @@ local function solveContact(contact, dt, useBias)
 	if penetration < 0 then
 		normalBias = penetration/dt
 	elseif useBias then
-		normalBias = math.min(2, math.max(0, (penetration - 0.005)) * (0.2/dt))
+		normalBias = math.min(4, math.max(0, (penetration - 0.005)) * (0.1/dt))
 	end
 	local tangentBias = useBias and (0.2/dt)*slid or vec(0,0)
 
@@ -62,7 +64,6 @@ local function solveContact(contact, dt, useBias)
 	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
 	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
 	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
-
 end
 
 local contactImpulses = {}
@@ -70,7 +71,7 @@ local contactImpulses = {}
 local function warmStartContact(contact)
 	local cachedImpulses = contactImpulses[contact.contactID]
 	if not cachedImpulses then return end
-	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.5, cachedImpulses[2]*0.5
+	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.9, cachedImpulses[2]*0.2
 	contact.accumulatedNormalImpulse = normalImpulse
 	contact.accumulatedTangentImpulse = tangentImpulse
 
@@ -83,7 +84,7 @@ local function warmStartContact(contact)
 end
 
 return function(world)
-	local dt = world.stepDuration/world.worldSubsteps
+	local dt = world.stepDuration/(world.worldSubsteps*world.velocityIterations)
 
 	for _, contact in ipairs(world.constraints) do
 		common.prepareContact(contact)
@@ -91,33 +92,23 @@ return function(world)
 	end
 	contactImpulses = {}
 
+	-- Approximate sub-stepping rather than iterating (contact points are not updated)
 	for _ = 1, world.velocityIterations do
+		world:integrateBodyVelocities(dt)
 
-		local h = dt/world.velocityIterations
-
-		world:integrateBodyVelocities(h)
-
-		for i, contact in ipairs(world.constraints) do
-			solveContact(contact, h, true)
+		for _, contact in ipairs(world.constraints) do
+			solveContact(contact, dt, true)
 		end
 
-		world:integrateBodyPositions(h)
-
+		world:integrateBodyPositions(dt)
 	end
 
-	--[[
-		for _ = 1, world.positionIterations do
-
-			local h = dt/world.positionIterations
-
-			world:integrateBodyVelocities(h)
-
-			for i, contact in ipairs(world.constraints) do
-				solveContact(contact, h, false)
-			end
-
+	-- Relaxation: remove excess impulse caused by Baumgarte
+	for _ = 1, world.positionIterations do
+		for _, contact in ipairs(world.constraints) do
+			solveContact(contact, dt, false)
 		end
-	--]]
+	end
 
 	for i, contact in ipairs(world.constraints) do
 		contactImpulses[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
