@@ -9,31 +9,33 @@ local ForceGenerators = require("physEngine/forceGenerators/forceGens")
 --[=============================================================================]--
 
 local world1 = World:new{
+	solver = "tgs_soft",
+
+	stepDuration = 1/20,
+	worldSubsteps = 2,
+
+	velocityIterations = 3,
+	positionIterations = 2
+}
+
+local world2 = World:new{
 	solver = "pgs",
 
 	stepDuration = 1/20,
 	worldSubsteps = 2,
 
-	velocityIterations = 4,
+	velocityIterations = 9,
 	positionIterations = 0
 }
 
-local world2 = World:new{
-	solver = "tgs",
+--world1, world2 = world2, world1
 
-	stepDuration = 1/20,
-	worldSubsteps = 2,
-
-	velocityIterations = 2,
-	positionIterations = 2
-}
-
-Demos.stacks1(world1)
-Demos.stacks1(world2)
+Demos.building(world1)
+--Demos.building(world2)
 
 -- Offset the display, so the world can be somewhere else other than the origin
 local WORLD_OFFSET = vec(5,0.00001,0)
-world1.worldPart:pos(16*WORLD_OFFSET)
+world2.worldPart:pos(16*WORLD_OFFSET)
 
 ---[[ Throw cubes
 	local thrownCube
@@ -48,7 +50,7 @@ world1.worldPart:pos(16*WORLD_OFFSET)
 		local eyePos = player:getPos():add(0,player:getEyeHeight(),0)
 		thrownCube
 			:setOrientation(quat(1,0,0,0))
-			:setPos(eyePos-WORLD_OFFSET)
+			:setPos(eyePos)
 			:setVel(player:getLookDir()*10)
 			:setAngularVelocity(0,0,0)
 	end)

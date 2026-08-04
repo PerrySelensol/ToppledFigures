@@ -20,6 +20,7 @@ end
 
 
 -- //TODO add restitution
+-- //TODO still unstable
 local function solveContact(contact, dt, useBias)
 	-- Convert contact point to world orientation, but local position
 	local contactPointA = contact.A.oriMat*contact.contactPointA
