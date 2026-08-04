@@ -1,5 +1,3 @@
-local ForceGenerators = require("physEngine/forceGenerators/forceGens")
-local quatMath = require("physEngine/libs/quaternions")
 require("physEngine/libs/vectors")
 local common = require("./common")
 
@@ -40,9 +38,9 @@ local function solveContact(contact, dt, useBias)
 	if penetration < 0 then
 		normalBias = penetration/dt
 	elseif useBias then
-		normalBias = math.min(4, math.max(0, (penetration - 0.005)) * (0.1/dt))
+		normalBias = math.min(4, math.max(0, (penetration - 0.005)) * (0.05/dt))
 	end
-	local tangentBias = useBias and (0.2/dt)*slid or vec(0,0)
+	local tangentBias = useBias and (0.5/dt)*slid or vec(0,0)
 
 	-- Impulse needed to kill separating velocity
 	local normalImpulse = (targetVelChange.x + normalBias) / contact.normalInertia
@@ -69,12 +67,14 @@ end
 local function warmStartContact(world, contact)
 	local cachedImpulses = world.cache[contact.contactID]
 	if not cachedImpulses then return end
-	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.9, cachedImpulses[2]*0.2
+	local normalImpulse, tangentImpulse = cachedImpulses[1], vec(0,0)
 	contact.accumulatedNormalImpulse = normalImpulse
 	contact.accumulatedTangentImpulse = tangentImpulse
 
 	local contactPointA = contact.A.oriMat*contact.contactPointA
-	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+	local contactPointB = contact.B
+		and contact.B.oriMat*contact.contactPointB
+		or contact.B_oriMat*contact.contactPointB
 
 	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
 	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
@@ -86,28 +86,31 @@ return function(world)
 
 	for _, contact in ipairs(world.constraints) do
 		common.prepareContact(contact)
-		warmStartContact(world, contact)
 	end
-	world.cache = {}
 
 	-- Approximate sub-stepping rather than iterating (contact points are not updated)
 	for _ = 1, world.velocityIterations do
 		world:integrateBodyVelocities(dt)
 
 		for _, contact in ipairs(world.constraints) do
+			warmStartContact(world, contact)
+		end
+
+		for _, contact in ipairs(world.constraints) do
 			solveContact(contact, dt, true)
 		end
 
 		world:integrateBodyPositions(dt)
-	end
 
-	-- Relaxation: remove excess impulse caused by Baumgarte
-	for _ = 1, world.positionIterations do
-		for _, contact in ipairs(world.constraints) do
-			solveContact(contact, dt, false)
+		-- Relaxation: remove excess impulse caused by Baumgarte
+		for _ = 1, world.positionIterations do
+			for _, contact in ipairs(world.constraints) do
+				solveContact(contact, dt, false)
+			end
 		end
 	end
 
+	world.cache = {}
 	for i, contact in ipairs(world.constraints) do
 		world.cache[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
 		world.constraints[i] = nil

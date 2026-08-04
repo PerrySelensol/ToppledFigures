@@ -1,5 +1,3 @@
-local ForceGenerators = require("physEngine/forceGenerators/forceGens")
-local quatMath = require("physEngine/libs/quaternions")
 require("physEngine/libs/vectors")
 local common = require("./common")
 
@@ -68,7 +66,9 @@ local function warmStartContact(world, contact)
 	contact.accumulatedTangentImpulse = tangentImpulse
 
 	local contactPointA = contact.A.oriMat*contact.contactPointA
-	local contactPointB = contact.B and contact.B.oriMat*contact.contactPointB or contact.B_oriMat*contact.contactPointB
+	local contactPointB = contact.B
+		and contact.B.oriMat*contact.contactPointB
+		or contact.B_oriMat*contact.contactPointB
 
 	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
 	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
