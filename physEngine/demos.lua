@@ -194,4 +194,39 @@ function Demos.top(world)
 	ForceGenerators.register(world, box1, ForceGenerators.gravityForceGen(vec(0,-10,0)))
 end
 
+function Demos.building(world)
+	world:addRigidBody(HalfSpace:new(vec(0,0,0), vec(0,1,0)))
+	local B = {}
+	for i = 0, 2 do
+		B[1+5*i] = world:addRigidBody(
+			Box:new("light_gray_concrete", 0.5, 3, 0.5, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(2,1.5+i*3.5,2)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		B[2+5*i] = world:addRigidBody(
+			Box:new("light_gray_concrete", 0.5, 3, 0.5, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(-2,1.5+i*3.5,2)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		B[3+5*i] = world:addRigidBody(
+			Box:new("light_gray_concrete", 0.5, 3, 0.5, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(2,1.5+i*3.5,-2)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		B[4+5*i] = world:addRigidBody(
+			Box:new("light_gray_concrete", 0.5, 3, 0.5, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(-2,1.5+i*3.5,-2)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+		B[5+5*i] = world:addRigidBody(
+			Box:new("light_gray_concrete", 5, 0.5, 5, 1):setRestitution(0):setFriction(0.4)
+			:setPos(vec(0,3.25+i*3.5,0)):setOrientation(quat(1,0,0,0))
+			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+		)
+	end
+	for i = 1, #B do
+		ForceGenerators.register(world, B[i], ForceGenerators.gravityForceGen(vec(0,-10,0)))
+	end
+end
+
 return Demos
