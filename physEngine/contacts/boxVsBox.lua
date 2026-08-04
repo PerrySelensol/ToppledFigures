@@ -240,7 +240,7 @@ local function getContactInfoFromID(A, B, featureID)
 	end
 end
 
-local COHERENCE_LIMIT = -0.002
+local COHERENCE_LIMIT = -0.02
 local function generatePartialContactManifoldFromCache(A, B, partialContactPairCache)
 	for id, contact in next, partialContactPairCache do
 		local contactPointA, contactPointB, penetration = getContactInfoFromID(A, B, id)
