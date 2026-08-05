@@ -9,29 +9,29 @@ local ForceGenerators = require("physEngine/forceGenerators/forceGens")
 --[=============================================================================]--
 
 local world1 = World:new{
+	solver = "pgs_soft",
+
+	stepDuration = 1/20,
+	worldSubsteps = 2,
+
+	velocityIterations = 6,
+	positionIterations = 0
+}
+
+local world2 = World:new{
 	solver = "tgs_soft",
 
 	stepDuration = 1/20,
 	worldSubsteps = 2,
 
-	velocityIterations = 3,
+	velocityIterations = 2,
 	positionIterations = 2
-}
-
-local world2 = World:new{
-	solver = "pgs",
-
-	stepDuration = 1/20,
-	worldSubsteps = 2,
-
-	velocityIterations = 9,
-	positionIterations = 0
 }
 
 --world1, world2 = world2, world1
 
 Demos.building(world1)
---Demos.building(world2)
+Demos.building(world2)
 
 -- Offset the display, so the world can be somewhere else other than the origin
 local WORLD_OFFSET = vec(5,0.00001,0)
