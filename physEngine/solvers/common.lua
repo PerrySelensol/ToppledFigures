@@ -36,11 +36,17 @@ function solverCommons.getSeparatingVel(A, B, contactPointA, contactPointB, cont
 end
 
 local I3 = matrices.mat3()
-function solverCommons.prepareContact(contact)
-	if contact.type ~= "contact" then return end
+local function prepareContact(world, contact)
 	contact.contactMatrix = generateOrthoBasis(contact.contactNormal)
-	contact.accumulatedNormalImpulse = 0
-	contact.accumulatedTangentImpulse = vec(0,0)
+
+	local cachedImpulses = world.cache[contact.contactID]
+	if cachedImpulses then
+		contact.accumulatedNormalImpulse = cachedImpulses[1]
+		contact.accumulatedTangentImpulse = cachedImpulses[2]
+	else
+		contact.accumulatedNormalImpulse = 0
+		contact.accumulatedTangentImpulse = vec(0,0)
+	end
 
 	local normalInertia
 	local tangentInertia
@@ -75,6 +81,43 @@ function solverCommons.prepareContact(contact)
 
 	contact.normalInertia = normalInertia
 	contact.tangentInertia = tangentInertia
+end
+
+function solverCommons.prepareAllConstraints(world)
+	for _, constraint in ipairs(world.constraints) do
+		if constraint.type == "contact" then prepareContact(world, constraint) end
+	end
+end
+
+function solverCommons.storeAllImpulses(world, normalScale, tangentScale)
+	world.cache = {}
+	for _, constraint in ipairs(world.constraints) do
+		if constraint.type == "contact" then
+			world.cache[constraint.contactID] = {
+				constraint.accumulatedNormalImpulse*normalScale,
+				constraint.accumulatedTangentImpulse*tangentScale
+			}
+		end
+	end
+end
+
+function solverCommons.warmStartAllConstraints(world)
+	for _, contact in ipairs(world.constraints) do
+		local impulse = vec(
+			contact.accumulatedNormalImpulse,
+			contact.accumulatedTangentImpulse[1],
+			contact.accumulatedTangentImpulse[2]
+		)
+
+		local contactPointA = contact.A.oriMat*contact.contactPointA
+		local contactPointB = contact.B
+			and contact.B.oriMat*contact.contactPointB
+			or contact.B_oriMat*contact.contactPointB
+
+		local totalImpulseWorld = contact.contactMatrix * impulse
+		contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
+		if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
+	end
 end
 
 return solverCommons

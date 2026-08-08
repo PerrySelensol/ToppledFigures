@@ -109,6 +109,7 @@ function World:step(manualStep)
 	end
 
 	for _ = 1, self.worldSubsteps do
+		-- Generate constraints (only collision for now)
 		-- Currently uses narrow phase only
 		--markBench"collsion"
 		for i = 1, #rigidBodies do for j = i+1, #rigidBodies do
@@ -122,9 +123,15 @@ function World:step(manualStep)
 			::endOfLoop::
 		end end
 
+		-- Solve constraints
 		--markBench"solve"
 		Solvers[self.solver](self)
 		--brint()
+
+		-- Remove all constraints
+		for i in ipairs(self.constraints) do
+			self.constraints[i] = nil
+		end
 	end
 end
 

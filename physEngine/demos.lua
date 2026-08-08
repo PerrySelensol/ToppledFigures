@@ -43,7 +43,7 @@ function Demos.stacks1(world)
 	}
 	local width = 1
 	local friction = 0.3
-	for i = 1, 5 do
+	for i = 1, 7 do
 		local j = (i % 2 == 0) and -0.05 or 0.05
 		local box = world:addRigidBody(
 			Box:new(pallete[((i-1)%5) + 1], width, 1, width, 1):setRestitution(0.4):setFriction(friction)
@@ -132,13 +132,13 @@ function Demos.double_domino(world)
 		ForceGenerators.register(world, B[i], ForceGenerators.gravityForceGen(vec(0,-5,0)))
 	end
 
-	B[1]:setPos(vec(-6.7,0.6,0)):setOrientation(quat(1,0,0,-0.3))
+	B[1]:setPos(vec(-6.68,0.6,0)):setOrientation(quat(1,0.001,0,-0.3))
 end
 
 function Demos.brick_wall(world)
 	world:addRigidBody(HalfSpace:new(vec(0,0,0), vec(0,1,0)))
 	local width, height = 1.5, 0.75
-	local arrayWidth, arrayHeight = 4, 5
+	local arrayWidth, arrayHeight = 3, 5
 	for i = 1, arrayHeight do
 		local s = (i%2 == 0)
 		for j = 1, arrayWidth do
@@ -195,9 +195,10 @@ function Demos.top(world)
 end
 
 function Demos.building(world)
+	local LAYERS = 2
 	world:addRigidBody(HalfSpace:new(vec(0,0,0), vec(0,1,0)))
 	local B = {}
-	for i = 0, 2 do
+	for i = 0, LAYERS-1 do
 		B[1+5*i] = world:addRigidBody(
 			Box:new("light_gray_concrete", 0.5, 3, 0.5, 1):setRestitution(0):setFriction(0.4)
 			:setPos(vec(2,1.5+i*3.5,2)):setOrientation(quat(1,0,0,0))
@@ -224,7 +225,12 @@ function Demos.building(world)
 			:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
 		)
 	end
-	for i = 1, #B do
+	B[0] = world:addRigidBody(
+		Box:new("bedrock", 4, 4, 4, 20):setRestitution(0):setFriction(0.4)
+		:setPos(vec(0,2+LAYERS*3.5,0)):setOrientation(quat(1,0,0,0))
+		:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
+	)
+	for i = 0, #B do
 		ForceGenerators.register(world, B[i], ForceGenerators.gravityForceGen(vec(0,-10,0)))
 	end
 end

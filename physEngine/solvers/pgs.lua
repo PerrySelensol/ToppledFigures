@@ -58,44 +58,29 @@ local function solveContact(contact, dt)
 	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
 end
 
-local function warmStartContact(world, contact)
-	local cachedImpulses = world.cache[contact.contactID]
-	if not cachedImpulses then return end
-	local normalImpulse, tangentImpulse = cachedImpulses[1]*0.9, cachedImpulses[2]*0.2
-	contact.accumulatedNormalImpulse = normalImpulse
-	contact.accumulatedTangentImpulse = tangentImpulse
-
-	local contactPointA = contact.A.oriMat*contact.contactPointA
-	local contactPointB = contact.B
-		and contact.B.oriMat*contact.contactPointB
-		or contact.B_oriMat*contact.contactPointB
-
-	local totalImpulseWorld = contact.contactMatrix * vec(normalImpulse, tangentImpulse[1], tangentImpulse[2])
-	contact.A:addWorldImpulse(totalImpulseWorld, contactPointA)
-	if contact.B then contact.B:addWorldImpulse(-totalImpulseWorld, contactPointB) end
-end
-
 return function(world)
 	local dt = world.stepDuration/world.worldSubsteps
 
-	world:integrateBodyVelocities(dt)
-	
-	for _, contact in ipairs(world.constraints) do
-		common.prepareContact(contact)
-		warmStartContact(world, contact)
-	end
-	world.cache = {}
+	common.prepareAllConstraints(world)
 
+	world:integrateBodyVelocities(dt)
+
+	common.warmStartAllConstraints(world)
+	
 	for _ = 1, world.velocityIterations do
 		for _, contact in ipairs(world.constraints) do
 			solveContact(contact, dt)
 		end
 	end
 
-	for i, contact in ipairs(world.constraints) do
-		world.cache[contact.contactID] = {contact.accumulatedNormalImpulse, contact.accumulatedTangentImpulse}
-		world.constraints[i] = nil
+	world:integrateBodyPositions(dt)
+
+	-- Relaxation: remove excess impulse caused by warmstarting
+	for _ = 1, world.positionIterations do
+		for _, contact in ipairs(world.constraints) do
+			solveContact(contact, dt)
+		end
 	end
 
-	world:integrateBodyPositions(dt)
+	common.storeAllImpulses(world, 1, 1)
 end
