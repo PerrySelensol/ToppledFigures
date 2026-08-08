@@ -80,13 +80,16 @@ end
 function RigidBody:calculateDerivedData()
 	local ori = quatMath.quatToRotMat(self.ori)
 	self.oriMat = ori
+	self.inverseOriMat = ori:transposed()
 	self.inverseInertiaTensorWorld = ori* self.inverseInertiaTensor* ori:transposed()
 end
 
 -- World space direction, local application point in world orientation
-function RigidBody:addWorldImpulse(impulse, point)
+function RigidBody:addWorldImpulse(impulse, point1)
+	--point(point1+self.pos, self.id == 2 and vec(1,0,0) or nil)
+	--for i = 0, 1, 0.05 do point(point1+self.pos+2*i*impulse, vec(0,i,i)) end
 	self.vel = self.vel + (self.inverseMass * impulse)
-	self.rot = self.rot + (self.inverseInertiaTensorWorld * (point^impulse))
+	self.rot = self.rot + (self.inverseInertiaTensorWorld * (point1^impulse))
 end
 
 -- World space direction, local application point in world orientation
@@ -94,6 +97,8 @@ function RigidBody:nudge(vel, rot)
 	self.pos = self.pos + vel
 	local half_quatRot = quat(0, (0.5*rot):unpack())
 	self.ori = (self.ori + half_quatRot*self.ori):normalized()
+	self.oriMat = quatMath.quatToRotMat(self.ori)
+	self.inverseOriMat = self.oriMat:transposed()
 end
 
 function RigidBody:addForceAtCenter(force)
@@ -111,15 +116,34 @@ function RigidBody:addForceAtBodyPoint(force, point)
 	self:addForce(force, self.oriMat*point + self.pos)
 end
 
--- Very basic integration, doesn't conserve angular momentum (no tennis racket effect x-x)
--- Any attempts to conserve angular momentum make
--- the rotation axis converges to the longest principal axis
-function RigidBody:integrateVelocity(dt)
-	self.vel = self.vel + dt*self.inverseMass*self.totalForce
-	self.rot = self.rot + self.inverseInertiaTensorWorld*(dt*self.totalTorque)
+-- Semi-implicit Euler integration but with implicit gyroscopic torque integration
+do
+	local function crossMat(v) -- Cross product matrix so that crossMat(v) * u = v ^ u
+		return matrices.mat3(
+			vec(0,		v.z,	-v.y),
+			vec(-v.z,	0,		v.x ),
+			vec(v.y,	-v.x,	0   )
+		)
+	end
 
-	self.totalForce = vec(0,0,0)
-	self.totalTorque = vec(0,0,0)
+	local function findGyroscopicTorque(body, dt)
+		local localInertia = body.inverseInertiaTensor:inverted()
+		local localRot = body.inverseOriMat * body.rot
+		local residueTorque = dt*(localRot^(localInertia*localRot))
+		local jacobian = localInertia + (crossMat(localRot)*localInertia - crossMat(localInertia*localRot))*dt
+
+		-- Single Newton-Raphson
+		local localAngularVelChange = jacobian:inverted()*residueTorque
+		return body.oriMat*localAngularVelChange
+	end
+
+	function RigidBody:integrateVelocity(dt)
+		self.vel = self.vel + dt*self.inverseMass*self.totalForce
+		self.rot = self.rot + self.inverseInertiaTensorWorld*(dt*self.totalTorque) - findGyroscopicTorque(self, dt)
+
+		self.totalForce = vec(0,0,0)
+		self.totalTorque = vec(0,0,0)
+	end
 end
 
 function RigidBody:integratePosition(dt)

@@ -14,18 +14,18 @@ function ForceGenerators.gravityForceGen(gravityAcc)
 	end
 end
 
-function ForceGenerators.register(body, generator)
+function ForceGenerators.register(world, body, generator)
 	local body_generator = {body, generator}
-	forceRegistry[body_generator] = true
+	world.forces[body_generator] = true
 	return body_generator
 end
 
-function ForceGenerators.remove(body_generator)
-	forceRegistry[body_generator] = nil
+function ForceGenerators.remove(world, body_generator)
+	world.forces[body_generator] = nil
 end
 
-function ForceGenerators.updateAllForces(dt)
-	for data in next, forceRegistry do
+function ForceGenerators.updateAllForces(world, dt)
+	for data in next, world.forces do
 		data[2](data[1], dt)
 	end
 end

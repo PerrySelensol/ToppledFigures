@@ -1,53 +1,66 @@
-require("physEngine/libs/quaternions")
+local World = require("physEngine/simWorld")
+local Demos = require("physEngine/demos")
+
+local quatMath = require("physEngine/libs/quaternions")
 local Box = require("physEngine/rigidBody/box")
 local HalfSpace = require("physEngine/rigidBody/halfSpace")
 local ForceGenerators = require("physEngine/forceGenerators/forceGens")
 
-local CollisionSolver = require("physEngine/collisionSolver")
-
 --[=============================================================================]--
 
-local ground = HalfSpace:new(vec(0,0,0), vec(0,1,0))
---local ceiling = HalfSpace:new(vec(0,10,0), vec(0,-1,0))
---
---local SIZE = 5
---local wall1 = HalfSpace:new(vec(-SIZE,0,0), vec(1,0,0))
---local wall2 = HalfSpace:new(vec(SIZE,0,0), vec(-1,0,0))
---local wall3 = HalfSpace:new(vec(0,0,-SIZE), vec(0,0,1))
---local wall4 = HalfSpace:new(vec(0,0,SIZE), vec(0,0,-1))
---
---local simWorldPart = models.simWorldPart
---renderTask = simWorldPart:newBlock("jail"):block("glass"):scale(SIZE*2, 10, -SIZE*2):pos(-SIZE*16,0,SIZE*16)
+local worldPGS = World:new{
+	solver = "pgs_soft",
 
-local q0 = quat(1,0,0,0)
-local q1 = quat(0.888073833977, 0.32505758, 0, 0.32505758):normalized()
+	stepDuration = 1/20,
+	worldSubsteps = 2,
 
-local q2 = quat(0.9238795325112868,0.3826834323650898,0,0):normalized()
-local q3 = quat(0.9238795325112868,0,0,0.3826834323650898):normalized()
-local q4 = quat(0.9238795325112868,0,0.3826834323650898,0):normalized()
+	velocityIterations = 4,
+	positionIterations = 2
+}
+--SolveLoops = worldPGS.velocityIterations + worldPGS.positionIterations
+
+local worldTGS = World:new{
+	solver = "tgs_soft",
+
+	stepDuration = 1/20,
+	worldSubsteps = 2,
+
+	velocityIterations = 3,
+	positionIterations = 1
+}
+--SolveLoops = worldTGS.velocityIterations*(1 + worldTGS.positionIterations)
+
+world1, world2 = worldTGS, worldPGS
+--world1, world2 = worldPGS, worldTGS
+
+Demos.building(world1)
+Demos.building(world2)
+--drint(world1.solver)
 
 
-local box2 = Box:new("spawner", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-:setPos(vec(0,1,0)):setOrientation(quat(1,0,0.2,0))
-:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
-ForceGenerators.register(box2, ForceGenerators.gravityForceGen(vec(0,-2,0)))
 
-local box1 = Box:new("glass", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
-:setPos(vec(0.4,2.2,0)):setOrientation(q4)
-:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
-ForceGenerators.register(box1, ForceGenerators.gravityForceGen(vec(0,-2,0))); --print(box1)
+world2.worldPart:pos(16*vec(8,0.00001,0))
 
---local box3 = Box:new("honey_block", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
---:setPos(vec(0,4,0)):setOrientation(q0)
---:setVel(vec(0,0,0)):setAngularVelocity(0,0,0)
---ForceGenerators.register(box3, ForceGenerators.gravityForceGen(vec(0,-2,0)))
---
---local box4 = Box:new("stone", 1, 1, 1, 1):setRestitution(0.4):setFriction(0.5)
---:setPos(vec(0,5.5,0)):setOrientation(q0)
---:setVel(vec(0,0,0)):setAngularVelocity(0,-0.2,0)
---ForceGenerators.register(box4, ForceGenerators.gravityForceGen(vec(0,-2,0)))
-
+-- Throw cubes
+do
+	local thrownCube
+	local size, mass = 1, 1
+	keybinds:newKeybind("throw cube", "key.mouse.right"):onPress(function()
+		if not thrownCube then
+			thrownCube = world1:addRigidBody(
+				Box:new("cyan_terracotta", size, size, size, mass):setRestitution(0):setFriction(0.3)
+			)
+			ForceGenerators.register(world1, thrownCube, ForceGenerators.gravityForceGen(vec(0,-10,0)))
+		end
+		local eyePos = player:getPos():add(0,player:getEyeHeight(),0)
+		thrownCube
+			:setOrientation(quat(1,0,0,0))
+			:setPos(eyePos)
+			:setVel(player:getLookDir()*10)
+			:setAngularVelocity(0,0,0)
+	end)
+end
 
 function events.render()
-	--drint(box2.vel, box2.rot)
+	--drint(box1.vel, box1.rot)
 end
