@@ -4,8 +4,8 @@ local common = require("./common")
 --[=============================================================================]--
 
 local function getDampedSpringValues(dt)
-	local damping = 10 -- Damping ratio
-	local frequency = 0.25/dt -- Spring frequency
+	local damping = 2 -- Damping ratio
+	local frequency = 0.125/dt -- Spring frequency
 
 	local omega = 2 * math.pi * frequency -- Spring angular frequency
 	local a1 = 2 * damping + omega * dt
@@ -116,5 +116,5 @@ return function(world)
 		end
 	end
 
-	common.storeAllImpulses(world, 1, 1)
+	common.storeAllImpulses(world)
 end
