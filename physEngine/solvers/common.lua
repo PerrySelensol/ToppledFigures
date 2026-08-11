@@ -89,13 +89,13 @@ function solverCommons.prepareAllConstraints(world)
 	end
 end
 
-function solverCommons.storeAllImpulses(world, normalScale, tangentScale)
+function solverCommons.storeAllImpulses(world)
 	world.cache = {}
 	for _, constraint in ipairs(world.constraints) do
 		if constraint.type == "contact" then
 			world.cache[constraint.contactID] = {
-				constraint.accumulatedNormalImpulse*normalScale,
-				constraint.accumulatedTangentImpulse*tangentScale
+				constraint.accumulatedNormalImpulse,
+				constraint.accumulatedTangentImpulse
 			}
 		end
 	end

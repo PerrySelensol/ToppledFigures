@@ -82,5 +82,5 @@ return function(world)
 		end
 	end
 
-	common.storeAllImpulses(world, 1, 1)
+	common.storeAllImpulses(world)
 end
